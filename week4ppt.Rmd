@@ -1,0 +1,89 @@
+---
+title: "Predicting Wind Speed from Temperature"
+author: "Amanda Salvesen"
+date: "January 23, 2016"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Use Case
++ "What temperature is it Mom?"
++ "70 degrees"
++ "Is it windy?"
++ "No idea."
++ "That's ok, I have this handy app that Amanda made!"
+
+## ui.R
+```{r, echo=TRUE, eval=FALSE, message=FALSE, warning=FALSE}
+library(shiny)
+shinyUI(fluidPage(
+        titlePanel("Predict Wind Speed from Temperature"),
+        sidebarLayout(
+                sidebarPanel(
+                        numericInput("TempInput",
+                                     "What is the temperature in degrees F?",
+                                     70, min = 50, max = 100, step = 1),
+                        checkboxInput("showModel", "Show Model", value = TRUE),
+                        checkboxInput("showInt", "Show Prediction", value = TRUE),
+                        submitButton("Go!")
+                        ),
+                mainPanel(
+                        plotOutput("plot1"),
+                        h3("Predicted Wind:"),
+                        textOutput("pred")
+                )
+        )
+))
+```
+
+## server.R: Part 1
+```{r, eval=FALSE, message=FALSE, warning=FALSE, echo=TRUE}
+library(shiny)
+library(ggplot2)
+shinyServer(function(input, output) {
+        lm <- lm(Wind ~ Temp, data = airquality)
+        pred <- reactive({
+                TempIn <- input$TempInput
+                predict(lm, newdata = data.frame(Temp = TempIn))
+        })
+        output$plot1 <- renderPlot({
+                TempIn <- input$TempInput
+                g <- ggplot(data = airquality, aes(x = Temp, y = Wind)) +
+                        geom_point()
+                print(g)
+                if(input$showModel){
+                        g <- g + geom_smooth(method = "lm")
+                        print(g)
+                }
+```                
+
+## server.R: Part 2
+```{r, eval=FALSE, message=FALSE, warning=FALSE, echo=TRUE}
+                if(input$showInt){
+                        g <- g + geom_vline(xintercept = input$TempInput,
+                                            color="red")
+                        print(g)
+                }
+                output$pred <- renderText({
+                        pred()
+                })
+        })
+})
+```
+
+## Final App
+
+You can check out my app at <https://asalvesen.shinyapps.io/Data_Products/> and supporting documentation at <https://github.com/asalvesen/Data-Products>.
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+g <- ggplot(data = airquality, aes(x = Temp, y = Wind)) +
+                        geom_point() +
+                        geom_smooth(method = "lm") +
+                        geom_vline(xintercept = 70, color="red")
+                print(g)
+```
+
+
